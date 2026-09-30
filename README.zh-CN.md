@@ -39,12 +39,12 @@
 3. [提交收录申请](https://github.com/thinkany-ai/spotcat-extensions/issues/new?template=submit-extension.yml)。
 4. 审核通过后，维护者把它加进 `registry.json`，CI 自动打包上传到 CDN。发布新版本时打新 tag 并在 issue 里回复。
 
-**官方扩展**：修改 `extensions/<id>` 并提高 `version`，合并到 `main` 后自动发布。
+**官方扩展**：修改 `extensions/<id>` 并提高 `version`，合并到 `main` 后 30 分钟内自动发布。
 
 ## 维护者：发布
 
 ```sh
-./scripts/publish.sh --changed          # 发布所有版本号比 CDN 上新的扩展（CI 在 main 推送后执行）
+./scripts/publish.sh --changed          # 发布所有版本号比 CDN 上新的扩展
 ./scripts/publish.sh translate          # 只发布某个扩展
 ./scripts/publish.sh --index-only       # 只重新生成 index.json（改了推荐列表、下架社区扩展）
 DRY_RUN=1 ./scripts/publish.sh --changed # 只打包到 dist/，不上传
@@ -62,7 +62,7 @@ DRY_RUN=1 ./scripts/publish.sh --changed # 只打包到 dist/，不上传
 
 `recommended` 里的扩展会在用户首次运行 Spotcat 时自动安装。
 
-凭据：CI 需要仓库 Secrets `CLOUDFLARE_ACCOUNT_ID`、`R2_ACCESS_KEY_ID`、`R2_SECRET_ACCESS_KEY`（spotcat 桶的 R2 读写令牌）；本地发布使用已登录的 `wrangler`。
+自动发布由 `spotcat` 仓库的 [Publish extensions](https://github.com/thinkany-ai/spotcat/actions/workflows/extensions.yml) workflow 执行（R2 Secrets 配置在那里）：每 30 分钟对本仓库 `main` 运行一次 `publish.sh --changed`。想立即发布就手动运行这个 workflow（可以指定扩展 id）。本地发布使用已登录的 `wrangler`。
 
 ## 许可证
 

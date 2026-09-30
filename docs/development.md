@@ -49,7 +49,7 @@ ln -s "$PWD/my-extension" ~/Library/Application\ Support/Spotcat/Extensions/my-e
 
 扩展有两种上架方式，用户都在「设置 › 扩展 › 插件市场」中一键安装：
 
-- **官方扩展**：源码在本仓库 [`extensions/`](../extensions)，改完提高 `manifest.json` 的 `version`，合并到 `main` 后 CI 自动发布。
+- **官方扩展**：源码在本仓库 [`extensions/`](../extensions)，改完提高 `manifest.json` 的 `version`，合并到 `main` 后 30 分钟内自动发布。
 - **社区扩展**：开源在你自己的仓库（建议命名为 `spotcat-extension-<名字>`，`manifest.json` 放在仓库根目录），打一个版本 tag，然后[提交收录申请](https://github.com/thinkany-ai/spotcat-extensions/issues/new?template=submit-extension.yml)。审核通过后我们把它加进 [`registry.json`](../registry.json)，由 CI 打包上传到 `cdn.spotcat.ai`。发布新版本：打新 tag，在原 issue 回复或提交新的申请。
 
 上架前请确认：

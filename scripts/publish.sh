@@ -119,6 +119,11 @@ case "${1:-}" in
   *) for id in "$@"; do publish_one "$id"; done ;;
 esac
 
+if [ "${1:-}" = "--changed" ] && [ ${#PUBLISHED[@]} -eq 0 ]; then
+  echo "Nothing changed."
+  exit 0
+fi
+
 # 合并：新发布的条目替换旧条目；只保留 extensions/ 和 registry.json 里还在的插件
 python3 - "$WORK" "${PUBLISHED[@]+"${PUBLISHED[@]}"}" > "$WORK/index.new.json" <<'EOF'
 import json, os, sys

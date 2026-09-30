@@ -67,7 +67,7 @@ ln -s "$PWD" ~/Library/Application\ Support/Spotcat/Extensions/<id>
   3. 在 `https://github.com/thinkany-ai/spotcat-extensions/issues/new?template=submit-extension.yml` 提交收录申请。
   4. 维护者审核后加入 `registry.json`，CI 打包上传到 `cdn.spotcat.ai`。
   5. 发布新版本时提高 `version`、打新 tag，并在 issue 里回复。
-- **官方扩展**（spotcat-extensions 仓库的 `extensions/<id>`）：提高 `version`，提 PR；合并到 `main` 后 CI 自动发布。
+- **官方扩展**（spotcat-extensions 仓库的 `extensions/<id>`）：提高 `version`，提 PR；合并到 `main` 后 30 分钟内自动发布。
 
 提交前的检查清单：
 - [ ] `scripts/pack.py --check` 通过

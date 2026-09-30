@@ -39,12 +39,12 @@ An extension is a folder with a `manifest.json` and an `index.html` — plain HT
 3. [Submit it for listing](https://github.com/thinkany-ai/spotcat-extensions/issues/new?template=submit-extension.yml).
 4. After review, a maintainer adds it to `registry.json` and CI packs and uploads it to the CDN. For a new version, push a new tag and reply in the issue.
 
-**Official extensions**: change `extensions/<id>`, bump `version`, and it is published automatically once merged into `main`.
+**Official extensions**: change `extensions/<id>`, bump `version`, and it is published automatically within about 30 minutes of being merged into `main`.
 
 ## Maintainers: publishing
 
 ```sh
-./scripts/publish.sh --changed           # publish every extension newer than the CDN (CI runs this on pushes to main)
+./scripts/publish.sh --changed           # publish every extension newer than the CDN
 ./scripts/publish.sh translate           # publish one extension
 ./scripts/publish.sh --index-only        # rebuild index.json only (recommended list changed, community extension delisted)
 DRY_RUN=1 ./scripts/publish.sh --changed # pack into dist/ without uploading
@@ -62,7 +62,7 @@ To list a community extension, add it to `community` in `registry.json`:
 
 Extensions in `recommended` are installed automatically the first time a user runs Spotcat.
 
-Credentials: CI needs the repository secrets `CLOUDFLARE_ACCOUNT_ID`, `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` (an R2 read/write token for the `spotcat` bucket); local publishing uses a logged-in `wrangler`.
+Automatic publishing runs from the [Publish extensions](https://github.com/thinkany-ai/spotcat/actions/workflows/extensions.yml) workflow in the `spotcat` repository, which holds the R2 secrets: every 30 minutes it runs `publish.sh --changed` against `main` of this repository. Run that workflow manually to publish right away (optionally with extension ids). Local publishing uses a logged-in `wrangler`.
 
 ## License
 
