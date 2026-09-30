@@ -140,6 +140,7 @@ print(json.dumps({
 EOF
 
 if [ -n "${DRY_RUN:-}" ]; then
+  mkdir -p "$DIST"
   cp "$WORK/index.new.json" "$DIST/index.json"
   echo "Dry run: $DIST/index.json"
   exit 0

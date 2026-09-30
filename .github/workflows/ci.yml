@@ -28,5 +28,7 @@ jobs:
               assert i in ids, f"recommended {i} not found"
           print("registry ok")
           PY
-      - name: Pack (dry run)
+      - name: Pack all extensions
+        run: python3 scripts/pack.py --out dist extensions/*
+      - name: Publish (dry run)
         run: DRY_RUN=1 ./scripts/publish.sh --changed
