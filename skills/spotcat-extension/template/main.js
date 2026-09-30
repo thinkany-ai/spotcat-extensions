@@ -21,7 +21,7 @@ function render() {
   }));
 }
 
-// 进入功能时触发（页面加载后立即一次）：内容匹配进入时 payload 是用户输入的文本
+// Called when the feature is entered (and once after the page loads); for a content match, payload is the typed text
 spotcat.onEnter(({ type, payload }) => {
   input.value = type === 'match' ? payload : '';
   render();

@@ -19,7 +19,7 @@ Community extensions are listed in [`registry.json`](registry.json).
 
 An extension is a folder with a `manifest.json` and an `index.html` — plain HTML/CSS/JS that reaches the clipboard, storage, network, AI and more through `window.spotcat`.
 
-- **Developer docs**: [docs/development.md](docs/development.md) (Chinese)
+- **Developer docs**: [docs/development.md](docs/development.md)
 - **Types**: [spotcat.d.ts](spotcat.d.ts)
 - **AI agents**: point Claude Code, Codex or another agent at [skills/spotcat-extension/SKILL.md](skills/spotcat-extension/SKILL.md) — workflow, template and checklist. To install it as a Claude Code skill:
 

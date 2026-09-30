@@ -1,73 +1,75 @@
-# Spotcat 扩展开发
+# Building Spotcat Extensions
 
-扩展就是一个目录：`manifest.json` 描述它提供哪些**功能**以及如何被触发，`index.html` 是进入功能后显示的页面（运行在 WKWebView 中）。纯 HTML/CSS/JS，不需要 Swift；React/Vue 等框架打包成静态文件同样可用。
+English | [简体中文](development.zh-CN.md)
 
-官方扩展和社区扩展使用完全相同的格式和 API，官方扩展的源码在 [`extensions/`](../extensions)，可以当作示例参考。
+An extension is a folder: `manifest.json` describes the **features** it provides and how they are triggered, and `index.html` is the page shown when a feature is opened (it runs in a WKWebView). Plain HTML/CSS/JS, no Swift required; React/Vue and other frameworks work too once built to static files.
 
-> 用 AI agent（Claude Code、Codex 等）开发扩展？让它先读 [`skills/spotcat-extension/SKILL.md`](../skills/spotcat-extension/SKILL.md)。
+Official and community extensions use exactly the same format and API. The official extensions in [`extensions/`](../extensions) make good examples.
 
-## 目录结构
+> Building an extension with an AI agent (Claude Code, Codex …)? Have it read [`skills/spotcat-extension/SKILL.md`](../skills/spotcat-extension/SKILL.md) first.
+
+## Folder layout
 
 ```
 my-extension/
-├── manifest.json   必需：扩展信息、功能、触发规则、权限
-├── index.html      必需（可用 main 字段改名）：进入功能后的页面
-├── style.css       可选，页面里用相对路径引用
-├── main.js         可选
-├── icon.png        可选，也可用 "sf:<SF Symbol>" 图标
-├── locales/        可选：多语言文案，如 zh-Hans.json、en.json
-└── README.md       建议：说明功能、关键词、用到的 API
+├── manifest.json   required: extension info, features, triggers, permissions
+├── index.html      required (rename with the main field): the page shown for a feature
+├── style.css       optional, referenced from the page with a relative path
+├── main.js         optional
+├── icon.png        optional; an "sf:<SF Symbol>" icon works too
+├── locales/        optional: translations such as en.json, zh-Hans.json
+└── README.md       recommended: features, keywords, APIs used
 ```
 
-把 [`spotcat.d.ts`](../spotcat.d.ts) 下载到扩展目录（或仓库根目录），在 JS 顶部加 `/// <reference path="./spotcat.d.ts" />` 即可获得 API 补全：
+Download [`spotcat.d.ts`](../spotcat.d.ts) into your extension (or repository root) and add `/// <reference path="./spotcat.d.ts" />` at the top of your JS for API completion:
 
 ```sh
 curl -fsSLO https://raw.githubusercontent.com/thinkany-ai/spotcat-extensions/main/spotcat.d.ts
 ```
 
-页面请用普通 `<script src>` 加载脚本：扩展页面以 `file://` 打开，ES Module（`type="module"`）可能被拦截。
+Load scripts with a plain `<script src>`: extension pages are opened from `file://`, where ES modules (`type="module"`) may be blocked.
 
-## 调试
+## Debugging
 
-把扩展目录拖到（或软链接到）Spotcat 的扩展目录，「设置 › 扩展 › 打开扩展目录」可以直接打开它：
+Drag (or symlink) your extension folder into Spotcat's extensions folder — *Settings › Extensions › Open Extensions Folder* opens it:
 
 ```
-~/Library/Application Support/Spotcat/Extensions/<你的扩展>/        # 正式版
-~/Library/Application Support/Spotcat Dev/Extensions/<你的扩展>/    # 本地构建的开发版
+~/Library/Application Support/Spotcat/Extensions/<your-extension>/        # release build
+~/Library/Application Support/Spotcat Dev/Extensions/<your-extension>/    # locally built dev build
 ```
 
 ```sh
 ln -s "$PWD/my-extension" ~/Library/Application\ Support/Spotcat/Extensions/my-extension
 ```
 
-- 每次呼出 Spotcat 时会重新读取 manifest（间隔 5 秒以上），改完直接再呼出即可生效；页面每次进入功能都会重新加载。也可以在「设置 › 扩展」点「重新加载」。
-- 自己放进来的扩展在「设置 › 扩展」里标为「本地」。页面可以用 Safari 调试：Safari 设置 › 高级 › 勾选「显示网页开发者功能」，进入扩展后在 Safari「开发」菜单里找到 Spotcat，或在页面上右键「检查元素」。
-- 插件市场不会覆盖同 id 的本地扩展。开发一个市场上已有的扩展时，先在「设置 › 扩展」卸载市场版本。
-- 开发 Spotcat 本身时，`make dev` 会直接加载同级目录 `../spotcat-extensions/extensions` 里的扩展并热更新（可用 `SPOTCAT_EXTENSIONS_DIR` 指定其他目录）。
+- Spotcat re-reads manifests each time it is opened (at most every 5 seconds), so changes apply the next time you open it; the page reloads every time a feature is entered. You can also click *Reload* in *Settings › Extensions*.
+- Extensions you add yourself are marked *Local* in *Settings › Extensions*. Debug the page with Safari: enable *Settings › Advanced › Show features for web developers* in Safari, open your extension, then find Spotcat in Safari's *Develop* menu — or right-click the page and choose *Inspect Element*.
+- The store never overwrites a local extension with the same id. To work on an extension that is already in the store, uninstall the store copy in *Settings › Extensions* first.
+- When working on Spotcat itself, `make dev` loads extensions straight from a sibling checkout at `../spotcat-extensions/extensions` with live reload (set `SPOTCAT_EXTENSIONS_DIR` to use another folder).
 
-## 发布
+## Publishing
 
-扩展有两种上架方式，用户都在「设置 › 扩展 › 插件市场」中一键安装：
+There are two ways into the store; either way users install with one click in *Settings › Extensions › Store*:
 
-- **官方扩展**：源码在本仓库 [`extensions/`](../extensions)，改完提高 `manifest.json` 的 `version`，合并到 `main` 后 30 分钟内自动发布。
-- **社区扩展**：开源在你自己的仓库（建议命名为 `spotcat-extension-<名字>`，`manifest.json` 放在仓库根目录），打一个版本 tag，然后[提交收录申请](https://github.com/thinkany-ai/spotcat-extensions/issues/new?template=submit-extension.yml)。审核通过后我们把它加进 [`registry.json`](../registry.json)，由 CI 打包上传到 `cdn.spotcat.ai`。发布新版本：打新 tag，在原 issue 回复或提交新的申请。
+- **Official extensions** live in [`extensions/`](../extensions) in this repository. Bump `version` in `manifest.json`; the change is published automatically within about 30 minutes of being merged into `main`.
+- **Community extensions** are open source in your own repository (ideally named `spotcat-extension-<name>`, with `manifest.json` at the root). Tag a release, then [submit it for listing](https://github.com/thinkany-ai/spotcat-extensions/issues/new?template=submit-extension.yml). After review we add it to [`registry.json`](../registry.json) and it is packed and uploaded to `cdn.spotcat.ai` within about 30 minutes. For a new version, push a new tag and reply in the issue (or open a new submission).
 
-上架前请确认：
+Before submitting, make sure that:
 
-- `scripts/pack.py --check <扩展目录>` 校验通过（需要 Python 3，把本仓库 clone 下来运行即可）
-- `id` 全局唯一（小写字母、数字、连字符），不和[已上架的扩展](https://cdn.spotcat.ai/extensions/index.json)重复
-- 只申请用到的权限；用到 `network` 时在 README 里说明会访问哪些服务
-- 不混淆代码、不从网络加载并执行脚本（页面里的 JS 必须随扩展一起打包，便于审核）
-- 有 README：功能、关键词、截图
+- `scripts/pack.py --check <extension folder>` passes (needs Python 3; clone this repository to run it)
+- the `id` is unique (lowercase letters, digits and hyphens) and not already [in the store](https://cdn.spotcat.ai/extensions/index.json)
+- you request only the permissions you use, and the README says which services you call when using `network`
+- there is no obfuscated code and no script loaded from the network (all JS ships inside the extension so it can be reviewed)
+- there is a README: features, keywords, screenshots
 
 ## manifest.json
 
 ```json
 {
   "id": "codec",
-  "name": "编码小助手",
+  "name": "Codec",
   "version": "0.1.0",
-  "description": "URL、Base64 编码与解码",
+  "description": "URL and Base64 encoding and decoding",
   "author": "Spotcat",
   "icon": "sf:chevron.left.forwardslash.chevron.right",
   "iconColor": "#3B82F6",
@@ -75,8 +77,8 @@ ln -s "$PWD/my-extension" ~/Library/Application\ Support/Spotcat/Extensions/my-e
   "features": [
     {
       "code": "url-decode",
-      "title": "URL decode (解码)",
-      "keywords": ["url decode", "url 解码", "解码"],
+      "title": "URL Decode",
+      "keywords": ["url decode", "decode"],
       "matches": [
         { "type": "regex", "pattern": "%[0-9A-Fa-f]{2}", "minLength": 3 }
       ]
@@ -85,57 +87,56 @@ ln -s "$PWD/my-extension" ~/Library/Application\ Support/Spotcat/Extensions/my-e
 }
 ```
 
-| 字段 | 说明 |
+| Field | Description |
 |---|---|
-| `id` | 唯一标识，只能用小写字母、数字和连字符 |
-| `version` | `x.y.z`，每次发布必须提高 |
-| `name` | 扩展名，显示在进入后的面包屑里 |
-| `icon` | `sf:<SF Symbol 名>`（渲染为彩色圆角方块），或相对扩展目录的图片路径（png / icns / pdf） |
-| `iconColor` | `sf:` 图标的背景色，默认系统蓝 |
-| `main` | 入口页面，默认 `index.html` |
-| `permissions` | 需要的敏感能力：`"network"`（`spotcat.fetch`）、`"ai"`（`spotcat.ai`，消耗用户的 AI 额度） |
-| `defaultLocale` | 默认语言，如 `"zh-Hans"`；当前语言缺失的文案从这里取 |
-| `homepage` | 可选，扩展主页（源码仓库），显示在插件市场 |
-| `minAppVersion` | 可选，需要的最低 Spotcat 版本，如 `"0.3.0"`；用到新 API 时填写 |
-| `features[]` | 功能列表，每个功能是搜索结果里的一个格子 |
+| `id` | Unique identifier: lowercase letters, digits and hyphens |
+| `version` | `x.y.z`; must increase with every release |
+| `name` | Extension name, shown in the header once opened |
+| `icon` | `sf:<SF Symbol name>` (drawn as a colored rounded tile) or an image path relative to the extension folder (png / icns / pdf) |
+| `iconColor` | Background color of an `sf:` icon; defaults to system blue |
+| `main` | Entry page; defaults to `index.html` |
+| `permissions` | Sensitive capabilities: `"network"` (`spotcat.fetch`), `"ai"` (`spotcat.ai`, uses the user's AI quota) |
+| `defaultLocale` | Default language such as `"en"`; strings missing in the current language come from here |
+| `homepage` | Optional: the extension's homepage (source repository), shown in the store |
+| `minAppVersion` | Optional: the minimum Spotcat version, such as `"0.3.0"`; set it when you use new APIs |
+| `features[]` | Features; each one is a tile in the search results |
 
-### 功能（feature）
+### Features
 
-| 字段 | 说明 |
+| Field | Description |
 |---|---|
-| `code` | 功能标识，进入时传给页面 |
-| `title` | 格子上的名称；参与关键词搜索 |
-| `icon` / `iconColor` | 可选，覆盖扩展图标 |
-| `keywords` | 关键词。输入模糊命中时出现在 **最佳搜索结果**，中文自动支持拼音 |
-| `matches` | 内容匹配规则，任一命中时出现在 **匹配推荐** |
+| `code` | Feature identifier, passed to the page when entered |
+| `title` | Name on the tile; also matched by keyword search |
+| `icon` / `iconColor` | Optional: overrides the extension icon |
+| `keywords` | Keywords. A fuzzy hit shows the feature under **Best match**; Chinese keywords also match pinyin |
+| `matches` | Content-match rules; if any rule matches, the feature shows under **Suggestions** |
 
-### 匹配规则（matches）
+### Match rules
 
-| `type` | 说明 |
+| `type` | Description |
 |---|---|
-| `regex` | `pattern` 为 NSRegularExpression 正则，对去掉首尾空白的输入做搜索（需要全文匹配请自己加 `^…$`） |
-| `text` | 任意文本，只看长度 |
+| `regex` | `pattern` is an NSRegularExpression searched in the trimmed input (add `^…$` yourself for a full match) |
+| `text` | Any text; only the length is checked |
 
-两种规则都支持 `minLength`（默认 1）和 `maxLength`。
+Both support `minLength` (default 1) and `maxLength`.
 
-规则写得太宽会让「匹配推荐」变得嘈杂。例如 Base64 规则如果只写 `^[A-Za-z0-9+/=]+$`，输入 `calendar` 也会被推荐解码。
+Rules that are too broad make *Suggestions* noisy. For example, a Base64 rule of just `^[A-Za-z0-9+/=]+$` would suggest decoding when the user types `calendar`.
 
-## 多语言
+## Localization
 
-扩展的界面语言跟随 Spotcat 设置（跟随系统 / 简体中文 / English）。
+Extensions follow Spotcat's interface language (System / 简体中文 / English).
 
-**文案文件**：`locales/<语言>.json`，扁平的 key → 文案，`{name}` 为占位符：
+**String files**: `locales/<language>.json`, a flat key → string map; `{name}` is a placeholder:
 
 ```json
-{ "name": "翻译", "featureTitle": "翻译", "detected": "识别为 {lang}" }
+{ "name": "Translate", "featureTitle": "Translate", "detected": "Detected {lang}" }
 ```
 
-**manifest**：`name`、`description`、功能的 `title` / `description` / `keywords` 可写成 `"__MSG_<key>__"`。
-关键词会展开为**所有语言**的文案，所以中文界面下输入英文关键词也能搜到。
+**manifest**: `name`, `description` and a feature's `title` / `description` / `keywords` can be written as `"__MSG_<key>__"`. Keywords expand to the strings of **every** language, so English keywords still match in the Chinese interface and vice versa.
 
-**选语言**：完全匹配 → 同语种（如 `zh-Hant` 用 `zh-Hans`）→ `en` → `defaultLocale`；缺失的 key 用 `defaultLocale` 补。
+**Language choice**: exact match → same language (e.g. `zh-Hans` for `zh-Hant`) → `en` → `defaultLocale`; missing keys fall back to `defaultLocale`.
 
-**页面**：
+**Pages**:
 
 ```html
 <button data-i18n="copy"></button>
@@ -145,82 +146,81 @@ ln -s "$PWD/my-extension" ~/Library/Application\ Support/Spotcat/Extensions/my-e
 
 ```js
 const { t, locale } = spotcat.i18n;
-t('detected', { lang: '英语' });           // "识别为 英语"
-new Intl.DisplayNames([locale], { type: 'language' }).of('ja'); // 语言名等可直接用 Intl
+t('detected', { lang: 'English' });        // "Detected English"
+new Intl.DisplayNames([locale], { type: 'language' }).of('ja'); // use Intl for language names etc.
 ```
 
-`data-i18n*` 在页面加载时自动填充；动态插入的元素调用 `spotcat.i18n.apply(el)`。
+`data-i18n*` attributes are filled when the page loads; call `spotcat.i18n.apply(el)` for elements you insert later.
 
-## AI 与对话
+## AI and chat
 
-AI 服务在 Spotcat 设置中统一配置（任意 OpenAI 兼容接口），扩展无需自己管理 API Key。
+The AI service is configured once in Spotcat's settings (any OpenAI-compatible API), so extensions never handle API keys.
 
-**调用模型**（需要 `"permissions": ["ai"]`）：
+**Calling a model** (needs `"permissions": ["ai"]`):
 
 ```js
 const { configured, model } = await spotcat.ai.info();
 
-// 一次性返回
+// whole reply at once
 const text = await spotcat.ai.chat({ messages: [{ role: 'user', content: 'hi' }] });
 
-// 流式 + 可中止
+// streaming, cancellable
 const controller = new AbortController();
 await spotcat.ai.chat({ messages, onDelta: (d) => (out.textContent += d), signal: controller.signal });
 ```
 
-**进入内置 AI 对话**（无需权限）：把扩展里的结果作为上下文，交给 Spotcat 的对话面板继续追问。对话中按 Esc 或返回按钮回到扩展，扩展状态保留。
+**Opening the built-in AI chat** (no permission needed): hand your results to Spotcat's chat panel as context so the user can ask follow-up questions. Esc or the back button in the chat returns to the extension with its state intact.
 
 ```js
 spotcat.chat.open({
-  title: '翻译：hello world',
+  title: 'Translate: hello world',
   context: [
-    { title: '原文（英语）', content: 'hello world' },
-    { title: 'Google 译文（简体中文）', content: '你好世界' },
+    { title: 'Source (English)', content: 'hello world' },
+    { title: 'Google (Simplified Chinese)', content: '你好世界' },
   ],
-  prompt: '',   // 可选：预填输入框
-  send: false,  // 可选：true 时直接发送 prompt
+  prompt: '',   // optional: prefill the input
+  send: false,  // optional: send the prompt right away
 });
 ```
 
-上下文会拼进系统提示发给模型，并在对话顶部以可折叠卡片显示。
+The context is added to the system prompt and shown as collapsible cards at the top of the chat.
 
-## 页面 API：`window.spotcat`
+## Page API: `window.spotcat`
 
-页面加载前注入，无需引入任何脚本。所有方法返回 Promise，失败时 reject。完整类型见 [`spotcat.d.ts`](spotcat.d.ts)。
+Injected before the page loads; nothing to import. Every method returns a Promise that rejects on failure. Full types are in [`spotcat.d.ts`](../spotcat.d.ts).
 
 ```js
-// 进入功能时回调（页面加载后立即触发一次）
+// called when a feature is entered (and once right after the page loads)
 spotcat.onEnter(({ code, type, payload }) => {
-  // type: 'keyword'（关键词进入，payload 是输入的关键词）
-  //       'match'  （内容匹配进入，payload 是匹配到的内容）
+  // type: 'keyword' (entered by keyword; payload is the typed keyword)
+  //       'match'   (entered by content match; payload is the matched content)
 });
 ```
 
-| API | 说明 | 权限 |
+| API | Description | Permission |
 |---|---|---|
-| `copyText(text)` | 复制到剪贴板 | |
-| `hideWindow()` | 隐藏窗口，扩展保持打开（90 秒内再呼出回到扩展） | |
-| `exit()` | 退出扩展，回到搜索 | |
-| `openURL(url)` | 打开 `http(s)` 网页或 `x-apple.systempreferences:` 设置页 | |
-| `openSettings(tab?)` | 打开 Spotcat 设置窗口，`tab` 可为 `general` / `profile` / `ai` / `about` | |
-| `fetch(url, { method, headers, body, timeout })` | 由 App 代发请求，不受 CORS 限制；返回 `{ status, headers, body }` | `network` |
-| `detectLanguage(text)` | 识别语言，返回 `'en'`、`'zh-Hans'` 等，或 `null` | |
-| `translate({ text, from, to })` | 系统离线翻译（macOS 26+，需下载语言包），返回 `{ text, from, to }` | |
-| `speak(text, lang?)` / `stopSpeaking()` | 系统语音朗读 | |
-| `storage.get(key)` / `set(key, value)` / `remove(key)` | 扩展私有的持久化存储（JSON） | |
-| `i18n.locale` / `i18n.t(key, vars)` / `i18n.apply(root)` | 多语言，见上文 | |
-| `ai.info({ model })` / `ai.chat({ messages, model, onDelta, signal })` | 使用 Spotcat 配置的 AI 服务；`model` 可选，默认用设置里的默认模型 | `ai` |
-| `chat.open({ title, context, prompt, send })` | 带上下文进入内置 AI 对话 | |
+| `copyText(text)` | Copy to the clipboard | |
+| `hideWindow()` | Hide the window and keep the extension open (reopening within 90 seconds returns to it) | |
+| `exit()` | Leave the extension and return to search | |
+| `openURL(url)` | Open an `http(s)` page or an `x-apple.systempreferences:` settings pane | |
+| `openSettings(tab?)` | Open Spotcat settings; `tab` can be `general` / `profile` / `ai` / `about` | |
+| `fetch(url, { method, headers, body, timeout })` | Request sent by the app, free of CORS; returns `{ status, headers, body }` | `network` |
+| `detectLanguage(text)` | Detect the language: `'en'`, `'zh-Hans'` … or `null` | |
+| `translate({ text, from, to })` | Offline system translation (macOS 26+, language packs required); returns `{ text, from, to }` | |
+| `speak(text, lang?)` / `stopSpeaking()` | System text-to-speech | |
+| `storage.get(key)` / `set(key, value)` / `remove(key)` | Private persistent storage for the extension (JSON) | |
+| `i18n.locale` / `i18n.t(key, vars)` / `i18n.apply(root)` | Localization, see above | |
+| `ai.info({ model })` / `ai.chat({ messages, model, onDelta, signal })` | Use the AI service configured in Spotcat; `model` is optional and defaults to the default model | `ai` |
+| `chat.open({ title, context, prompt, send })` | Open the built-in AI chat with context | |
 
-`storage` 数据存放在 `~/Library/Application Support/Spotcat/ExtensionData/<扩展 id>.json`。
+`storage` data is kept in `~/Library/Application Support/Spotcat/ExtensionData/<extension id>.json`.
 
-## 页面约定
+## Page conventions
 
-- 背景保持透明（`background: transparent`），让面板的毛玻璃透出来
-- 用 `@media (prefers-color-scheme: dark)` 适配深色模式
-- `Esc` 由 Spotcat 处理（退出扩展），页面收不到
-- ⌘A / ⌘C / ⌘V / ⌘X / ⌘Z 在输入框中可用
-- 页面内 `http(s)` 链接会在默认浏览器打开
-- 页面只能读取自己扩展目录下的文件
-- 页面自身的 `fetch`/XHR 受浏览器 CORS 限制（页面源为 `file://`），访问第三方接口请用 `spotcat.fetch`
-
+- Keep the background transparent (`background: transparent`) so the panel's frosted glass shows through
+- Support dark mode with `@media (prefers-color-scheme: dark)`
+- `Esc` is handled by Spotcat (it leaves the extension); the page never receives it
+- ⌘A / ⌘C / ⌘V / ⌘X / ⌘Z work in text fields
+- `http(s)` links in the page open in the default browser
+- The page can only read files inside its own extension folder
+- The page's own `fetch`/XHR is subject to CORS (its origin is `file://`); use `spotcat.fetch` for third-party APIs

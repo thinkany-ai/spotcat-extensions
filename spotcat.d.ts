@@ -1,12 +1,12 @@
-// Spotcat 扩展页面 API（window.spotcat）类型声明。
-// 把本文件放到扩展目录，在 JS 顶部加 `/// <reference path="./spotcat.d.ts" />` 即可在编辑器里获得补全。
+// Type declarations for the Spotcat extension page API (window.spotcat).
+// Put this file in your extension folder and add `/// <reference path="./spotcat.d.ts" />` at the top of your JS for editor completion.
 
 interface SpotcatEnterAction {
-  /** manifest 中功能的 code */
+  /** The feature's code from manifest.json */
   code: string;
-  /** keyword：通过关键词进入；match：通过内容匹配进入 */
+  /** keyword: entered by keyword; match: entered by content match */
   type: 'keyword' | 'match';
-  /** keyword 时为输入的关键词，match 时为匹配到的内容 */
+  /** The typed keyword for keyword, or the matched content for match */
   payload: string;
 }
 
@@ -16,82 +16,82 @@ interface SpotcatChatMessage {
 }
 
 interface SpotcatChatOpenOptions {
-  /** 聊天标题，省略时用第一条提问 */
+  /** Chat title; defaults to the first question */
   title?: string;
-  /** 附带的上下文，会作为系统提示发给模型，并在聊天顶部显示 */
+  /** Context sent to the model as the system prompt and shown at the top of the chat */
   context?: { title: string; content: string }[];
-  /** 预填到输入框的内容 */
+  /** Text to prefill the input with */
   prompt?: string;
-  /** 为 true 时直接发送 prompt */
+  /** Send the prompt right away when true */
   send?: boolean;
 }
 
 interface SpotcatFetchOptions {
   method?: string;
   headers?: Record<string, string>;
-  /** 请求体，需自行序列化（如 JSON.stringify） */
+  /** Request body; serialize it yourself (e.g. JSON.stringify) */
   body?: string;
-  /** 超时毫秒数，默认 30000 */
+  /** Timeout in milliseconds, 30000 by default */
   timeout?: number;
 }
 
 interface SpotcatFetchResponse {
   status: number;
-  /** header 名均为小写 */
+  /** Header names are lowercase */
   headers: Record<string, string>;
-  /** 响应文本（UTF-8） */
+  /** Response text (UTF-8) */
   body: string;
 }
 
 interface Spotcat {
-  /** 进入功能时回调；页面加载后立即触发一次 */
+  /** Called when a feature is entered; fires once right after the page loads */
   onEnter(callback: (action: SpotcatEnterAction) => void): void;
 
   copyText(text: string): Promise<true>;
-  /** 隐藏窗口，扩展保持打开（90 秒内再呼出会回到扩展） */
+  /** Hide the window and keep the extension open (reopening within 90 seconds returns to it) */
   hideWindow(): Promise<true>;
-  /** 退出扩展，回到搜索 */
+  /** Leave the extension and return to search */
   exit(): Promise<true>;
-  /** 打开 http(s) 网页或 x-apple.systempreferences: 设置页 */
+  /** Open an http(s) page or an x-apple.systempreferences: settings pane */
   openURL(url: string): Promise<true>;
-  /** 打开 Spotcat 设置窗口，可指定标签页（如引导用户配置 AI：openSettings('ai')） */
+  /** Open Spotcat settings, optionally on a tab (e.g. to set up AI: openSettings('ai')) */
   openSettings(tab?: 'general' | 'profile' | 'ai' | 'about'): Promise<true>;
 
-  /** 由 App 代发请求，不受 CORS 限制。需要 manifest 声明 "permissions": ["network"] */
+  /** Request sent by the app, free of CORS. Requires "permissions": ["network"] in manifest.json */
   fetch(url: string, options?: SpotcatFetchOptions): Promise<SpotcatFetchResponse>;
 
-  /** 识别语言，返回 BCP-47 代码（'en'、'zh-Hans'、'ja'…），无法识别时为 null */
+  /** Detect the language; returns a BCP-47 code ('en', 'zh-Hans', 'ja' …) or null */
   detectLanguage(text: string): Promise<string | null>;
-  /** 系统离线翻译（macOS 26+，需要已下载语言包）。from 默认自动识别 */
+  /** Offline system translation (macOS 26+, language packs required). from is detected by default */
   translate(request: { text: string; from?: string; to: string }): Promise<{ text: string; from: string; to: string }>;
-  /** 朗读文本，lang 省略时自动识别 */
+  /** Read text aloud; lang is detected when omitted */
   speak(text: string, lang?: string | null): Promise<true>;
   stopSpeaking(): Promise<true>;
 
-  /** 多语言：locale 为当前界面语言；t 从 locales/<语言>.json 取文案，{name} 为占位符 */
+  /** Localization: locale is the interface language; t reads locales/<language>.json, {name} is a placeholder */
   i18n: {
     locale: string;
     t(key: string, vars?: Record<string, string | number>): string;
-    /** 按 data-i18n / data-i18n-placeholder / data-i18n-title 填充文案（页面加载时自动执行一次） */
+    /** Fill data-i18n / data-i18n-placeholder / data-i18n-title (runs once when the page loads) */
     apply(root?: ParentNode): void;
   };
 
   /**
-   * 使用 Spotcat 设置中的 AI 服务。需要 manifest 声明 "permissions": ["ai"]。
-   * model 为 "服务商 id/模型名"（即 info() 返回的 id），不传或已失效时用默认模型
+   * The AI service configured in Spotcat settings. Requires "permissions": ["ai"] in manifest.json.
+   * model is "provider id/model name" (the id returned by info()); the default model is used when omitted or invalid
    */
   ai: {
     info(options?: { model?: string }): Promise<{ configured: boolean; id: string; model: string; provider: string }>;
-    /** 返回完整回复；传 onDelta 时流式推送增量，signal 可中止 */
+    /** Resolves with the full reply; with onDelta, deltas are streamed; signal cancels */
     chat(options: { messages: SpotcatChatMessage[]; model?: string; onDelta?: (delta: string) => void; signal?: AbortSignal }): Promise<string>;
   };
 
-  /** Spotcat 内置的 AI 对话面板。在聊天里按 Esc 或返回按钮回到扩展，扩展状态保留 */
+  /** Spotcat's built-in AI chat. Esc or the back button in the chat returns to the extension with its state intact */
   chat: {
     open(options?: SpotcatChatOpenOptions): Promise<true>;
   };
 
-  /** 扩展私有的持久化存储，值需可 JSON 序列化 */
+  /** Private persistent storage for the extension; values must be JSON-serializable */
   storage: {
     get<T = unknown>(key: string): Promise<T | null>;
     set(key: string, value: unknown): Promise<true>;

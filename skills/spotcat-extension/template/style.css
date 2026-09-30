@@ -17,7 +17,7 @@
 * { box-sizing: border-box; }
 html, body {
   margin: 0; height: 100%;
-  /* 透明背景，让 Spotcat 面板的毛玻璃透出来 */
+  /* Transparent so the Spotcat panel's frosted glass shows through */
   background: transparent;
   color: var(--fg);
   font: 14px/1.5 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;

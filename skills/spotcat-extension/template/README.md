@@ -1,9 +1,9 @@
-# Text Stats（my-extension）
+# Text Stats (my-extension)
 
-统计文本的字符数、词数和行数。
+Counts the characters, words and lines of a text.
 
-| 功能 | 关键词 | 内容匹配 |
+| Feature | Keywords | Content match |
 |---|---|---|
-| 文本统计 | `字数统计`、`count`、`wc` | 20 字符以上的任意文本 |
+| Text Stats | `count`, `wc`, `word count`, `字数统计` | any text of 20+ characters |
 
-权限：无。
+Permissions: none.

@@ -1,17 +1,17 @@
 #!/bin/bash
-# 把插件发布到 Cloudflare R2（spotcat 桶，https://cdn.spotcat.ai/extensions/）。
+# Publish extensions to Cloudflare R2 (the spotcat bucket, https://cdn.spotcat.ai/extensions/).
 #
-#   ./scripts/publish.sh translate codec     发布指定插件（官方插件在 extensions/<id>，社区插件在 registry.json）
-#   ./scripts/publish.sh --changed           发布所有版本号比 CDN 上新的插件（CI 在 main 分支推送后执行）
-#   ./scripts/publish.sh --index-only        只根据 registry.json 重新生成 index.json（改了推荐列表、下架插件时用）
-#   DRY_RUN=1 ./scripts/publish.sh ...       只打包，不上传
+#   ./scripts/publish.sh translate codec     publish these extensions (official ones in extensions/<id>, community ones in registry.json)
+#   ./scripts/publish.sh --changed           publish every extension whose version is newer than the CDN's
+#   ./scripts/publish.sh --index-only        only rebuild index.json from registry.json (recommended list changed, extension delisted)
+#   DRY_RUN=1 ./scripts/publish.sh ...       pack only, don't upload
 #
-# 每个插件独立发布：先上传 <id>/<version>.zip（永久缓存，同一版本不允许覆盖），
-# 再合并进 index.json（不缓存）——客户端读到新条目时，它引用的包一定已经存在。
-# 从 registry.json 移除的社区插件会在下次发布时从 index.json 下架（已上传的包保留）。
+# Each extension is published on its own: first <id>/<version>.zip is uploaded (cached forever; a version can't be
+# overwritten), then its entry is merged into index.json (not cached) — so any package a client sees in the index exists.
+# Community extensions removed from registry.json drop out of index.json on the next publish (uploaded packages are kept).
 #
-# 凭据：设置了 AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY（R2 的 S3 密钥）和 CLOUDFLARE_ACCOUNT_ID 时
-# 用 aws CLI（CI）；否则用本机已登录的 wrangler。
+# Credentials: with AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY (R2 S3 keys) and CLOUDFLARE_ACCOUNT_ID set, the aws CLI is
+# used (CI: the "Publish extensions" workflow in thinkany-ai/spotcat); otherwise a logged-in wrangler.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -42,18 +42,18 @@ fi
 
 IMMUTABLE="public, max-age=31536000, immutable"
 
-# 当前线上的 index.json（第一次发布时不存在）
+# The live index.json (missing before the first publish)
 curl -fsS "$CDN/index.json?t=$(date +%s)" -o "$WORK/index.json" 2>/dev/null || echo '{"extensions":[]}' > "$WORK/index.json"
 
 online_version() { # <id>
   python3 -c 'import json,sys; print(next((e["version"] for e in json.load(open(sys.argv[1]))["extensions"] if e["id"]==sys.argv[2]), ""))' "$WORK/index.json" "$1"
 }
 
-# 社区插件：registry.json 里的 repo + ref（tag 或 commit）→ 克隆到临时目录，打印插件目录
+# Community extension: clone repo + ref (tag or commit) from registry.json into a temp folder and print the extension folder
 fetch_community() { # <id>
   local spec repo ref subdir dir
   spec=$(python3 -c 'import json,sys; e=next((e for e in json.load(open("registry.json"))["community"] if e["id"]==sys.argv[1]), None); print("" if e is None else "\t".join([e["repo"], e["ref"], e.get("path", "")]))' "$1")
-  [ -n "$spec" ] || { echo "未知插件：$1（不在 extensions/ 也不在 registry.json）" >&2; return 1; }
+  [ -n "$spec" ] || { echo "Unknown extension: $1 (not in extensions/ or registry.json)" >&2; return 1; }
   IFS=$'\t' read -r repo ref subdir <<< "$spec"
   dir="$WORK/src/$1"
   git clone --quiet "$repo" "$dir" >&2
@@ -76,15 +76,15 @@ publish_one() { # <id>
   version=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$DIST/$id/entry.json")
   local manifest_id
   manifest_id=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["id"])' "$DIST/$id/entry.json")
-  [ "$manifest_id" = "$id" ] || { echo "manifest 里的 id「$manifest_id」与「$id」不一致" >&2; return 1; }
+  [ "$manifest_id" = "$id" ] || { echo "manifest id \"$manifest_id\" doesn't match \"$id\"" >&2; return 1; }
 
   if [ "$(online_version "$id")" = "$version" ]; then
-    echo "    $version 已发布，跳过（发布新版本请先修改 manifest.json 的 version）"
+    echo "    $version is already published, skipping (bump version in manifest.json to publish a new one)"
     return 0
   fi
-  # 带查询参数绕过 CDN 缓存：否则这次检查得到的 404 会被缓存，上传后几分钟内仍然下载不到
+  # Bypass the CDN cache with a query string; otherwise this check's 404 gets cached and the upload stays unreachable for minutes
   if [ -z "${DRY_RUN:-}" ] && curl -fsI "$CDN/$id/$version.zip?check=$(date +%s)" >/dev/null 2>&1; then
-    echo "    $CDN/$id/$version.zip 已存在，同一版本不能覆盖，请升级 version" >&2
+    echo "    $CDN/$id/$version.zip already exists; a version can't be overwritten, bump version" >&2
     return 1
   fi
 
@@ -124,7 +124,7 @@ if [ "${1:-}" = "--changed" ] && [ ${#PUBLISHED[@]} -eq 0 ]; then
   exit 0
 fi
 
-# 合并：新发布的条目替换旧条目；只保留 extensions/ 和 registry.json 里还在的插件
+# Merge: newly published entries replace old ones; keep only extensions still in extensions/ or registry.json
 python3 - "$WORK" "${PUBLISHED[@]+"${PUBLISHED[@]}"}" > "$WORK/index.new.json" <<'EOF'
 import json, os, sys
 from datetime import datetime, timezone
@@ -134,7 +134,7 @@ known = set(os.listdir("extensions")) | {e["id"] for e in registry["community"]}
 entries = {e["id"]: e for e in json.load(open(f"{work}/index.json"))["extensions"] if e["id"] in known}
 for i in published:
     entries[i] = json.load(open(f"{work}/entry-{i}.json"))
-# 官方插件在前，其余按 id 排序
+# Official extensions first, then by id
 ordered = sorted(entries.values(), key=lambda e: (not e.get("official"), e["id"]))
 print(json.dumps({
     "version": 1,

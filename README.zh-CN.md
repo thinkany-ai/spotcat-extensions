@@ -19,7 +19,7 @@
 
 扩展就是一个包含 `manifest.json` 和 `index.html` 的目录，纯 HTML/CSS/JS，通过 `window.spotcat` 调用剪贴板、存储、网络、AI 等能力。
 
-- **开发文档**：[docs/development.md](docs/development.md)
+- **开发文档**：[docs/development.zh-CN.md](docs/development.zh-CN.md)
 - **类型声明**：[spotcat.d.ts](spotcat.d.ts)
 - **AI agent**：让 Claude Code / Codex 等先读 [skills/spotcat-extension/SKILL.md](skills/spotcat-extension/SKILL.md)，它包含开发流程、模板和检查清单。也可以安装成 Claude Code 的 skill：
 

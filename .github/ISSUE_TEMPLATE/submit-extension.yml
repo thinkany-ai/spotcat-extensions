@@ -1,64 +1,63 @@
-name: 提交扩展 / Submit an extension
-description: 申请把你的开源扩展收录到 Spotcat 插件市场 / Get your open-source extension listed in the Spotcat store
+name: Submit an extension
+description: Get your open-source extension listed in the Spotcat store
 title: "[Submit] "
 labels: ["submission"]
 body:
   - type: markdown
     attributes:
       value: |
-        感谢贡献！提交前请阅读 [开发文档的「发布」一节](https://github.com/thinkany-ai/spotcat-extensions/blob/main/docs/development.md#发布)。
-        Thanks for contributing! Please read the "发布" (Publishing) section of the developer docs first.
+        Thanks for contributing! Please read the [Publishing section of the developer docs](https://github.com/thinkany-ai/spotcat-extensions/blob/main/docs/development.md#publishing) first.
   - type: input
     id: repo
     attributes:
-      label: 仓库地址 / Repository
-      description: 公开的 GitHub 仓库，建议命名为 spotcat-extension-<名字>
+      label: Repository
+      description: A public GitHub repository, ideally named spotcat-extension-<name>
       placeholder: https://github.com/you/spotcat-extension-hello
     validations:
       required: true
   - type: input
     id: ref
     attributes:
-      label: 版本 tag / Release tag
-      description: 要收录的 tag（或 commit），需与 manifest.json 的 version 一致
+      label: Release tag
+      description: The tag (or commit) to list; it must match version in manifest.json
       placeholder: v1.0.0
     validations:
       required: true
   - type: input
     id: id
     attributes:
-      label: 扩展 id / Extension id
-      description: manifest.json 中的 id
+      label: Extension id
+      description: The id in manifest.json
       placeholder: hello
     validations:
       required: true
   - type: input
     id: path
     attributes:
-      label: 子目录 / Subdirectory
-      description: 可选，manifest.json 不在仓库根目录时填写
+      label: Subdirectory
+      description: Optional — only if manifest.json isn't at the repository root
   - type: textarea
     id: description
     attributes:
-      label: 介绍 / Description
-      description: 做什么、怎么触发（关键词 / 内容匹配），最好附截图
+      label: Description
+      description: What it does and how it's triggered (keywords / content match). Screenshots help.
     validations:
       required: true
   - type: textarea
     id: permissions
     attributes:
-      label: 权限说明 / Permissions
-      description: 用到 network 时列出会访问的域名和用途；用到 ai 时说明发送给模型的内容
+      label: Permissions
+      description: With network, list the domains called and why; with ai, describe what is sent to the model
   - type: checkboxes
     id: checklist
     attributes:
-      label: 检查清单 / Checklist
+      label: Checklist
       options:
-        - label: "`python3 scripts/pack.py --check` 校验通过 / passes `scripts/pack.py --check`"
+        - label: Passes `python3 scripts/pack.py --check`
           required: true
-        - label: 代码未混淆，不从网络加载并执行脚本 / No obfuscated code, no remotely loaded scripts
+        - label: No obfuscated code and no remotely loaded scripts
           required: true
-        - label: 仓库有 README 和开源许可证 / The repository has a README and an open-source license
+        - label: The repository has a README and an open-source license
           required: true
-        - label: 在 Spotcat 中实际测试过（浅色和深色外观）/ Tested in Spotcat in light and dark appearance
+        - label: Tested in Spotcat in light and dark appearance
           required: true

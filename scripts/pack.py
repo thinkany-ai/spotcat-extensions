@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""校验并打包 Spotcat 插件。
+"""Validate and pack Spotcat extensions.
 
-    scripts/pack.py <插件目录> [--out dist] [--homepage URL] [--official]
-    scripts/pack.py --check <插件目录>...      只校验，不打包（CI 用）
+    scripts/pack.py <extension folder> [--out dist] [--homepage URL] [--official]
+    scripts/pack.py --check <extension folder>...      validate only, don't pack
 
-打包产物（发布脚本上传到 cdn.spotcat.ai/extensions/）：
-    <out>/<id>/<version>.zip        插件目录的全部文件（manifest.json 在 zip 根目录），内容相同则字节相同
-    <out>/<id>/<version>/icon.*     manifest 里的图标是图片时一并输出，插件市场列表用
-    <out>/<id>/entry.json           index.json 中这个插件的条目（url / 图标地址按 CDN 路径填好）
+Output (uploaded to cdn.spotcat.ai/extensions/ by publish.sh):
+    <out>/<id>/<version>.zip        every file of the extension (manifest.json at the zip root); same content, same bytes
+    <out>/<id>/<version>/icon.*     the icon, when the manifest uses an image, for the store listing
+    <out>/<id>/entry.json           this extension's entry in index.json (url and icon filled in with CDN paths)
 """
 import argparse
 import hashlib
@@ -24,10 +24,10 @@ VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?$")
 MSG_RE = re.compile(r"^__MSG_(\w+)__$")
 PERMISSIONS = {"network", "ai"}
 MATCH_TYPES = {"regex", "text"}
-# 不打进包里的文件
+# Files left out of packages
 EXCLUDE_NAMES = {".DS_Store", "Thumbs.db"}
 EXCLUDE_DIRS = {".git", "node_modules", ".github"}
-# 固定时间戳，保证同样的文件打出同样的 zip（sha256 稳定）
+# Fixed timestamps so the same files always give the same zip (stable sha256)
 ZIP_TIME = (2020, 1, 1, 0, 0, 0)
 
 
@@ -38,11 +38,11 @@ class PackError(Exception):
 def load_manifest(directory: Path) -> dict:
     path = directory / "manifest.json"
     if not path.is_file():
-        raise PackError(f"{directory}: 缺少 manifest.json")
+        raise PackError(f"{directory}: missing manifest.json")
     try:
         return json.loads(path.read_text("utf-8"))
     except json.JSONDecodeError as e:
-        raise PackError(f"{path}: JSON 格式错误：{e}")
+        raise PackError(f"{path}: invalid JSON: {e}")
 
 
 def load_locales(directory: Path) -> dict:
@@ -53,7 +53,7 @@ def load_locales(directory: Path) -> dict:
             try:
                 locales[file.stem] = json.loads(file.read_text("utf-8"))
             except json.JSONDecodeError as e:
-                raise PackError(f"{file}: JSON 格式错误：{e}")
+                raise PackError(f"{file}: invalid JSON: {e}")
     return locales
 
 
@@ -64,60 +64,60 @@ def validate(directory: Path) -> tuple[dict, dict]:
 
     def need(key, kind=str):
         if not isinstance(m.get(key), kind) or (kind is str and not m[key].strip()):
-            errors.append(f"缺少或无效的字段 {key}")
+            errors.append(f"missing or invalid field {key}")
 
     for key in ("id", "name", "version"):
         need(key)
     if isinstance(m.get("id"), str) and not ID_RE.match(m["id"]):
-        errors.append(f"id「{m['id']}」只能用小写字母、数字和连字符")
+        errors.append(f"id \"{m['id']}\" may only contain lowercase letters, digits and hyphens")
     if isinstance(m.get("version"), str) and not VERSION_RE.match(m["version"]):
-        errors.append(f"version「{m['version']}」应为 x.y.z")
+        errors.append(f"version \"{m['version']}\" must be x.y.z")
     if isinstance(m.get("minAppVersion"), str) and not VERSION_RE.match(m["minAppVersion"]):
-        errors.append(f"minAppVersion「{m['minAppVersion']}」应为 x.y.z")
+        errors.append(f"minAppVersion \"{m['minAppVersion']}\" must be x.y.z")
     if not (directory / m.get("main", "index.html")).is_file():
-        errors.append(f"入口页面 {m.get('main', 'index.html')} 不存在")
+        errors.append(f"entry page {m.get('main', 'index.html')} not found")
     for p in m.get("permissions") or []:
         if p not in PERMISSIONS:
-            errors.append(f"未知权限「{p}」，可用：{', '.join(sorted(PERMISSIONS))}")
+            errors.append(f"unknown permission \"{p}\"; available: {', '.join(sorted(PERMISSIONS))}")
     icon = m.get("icon")
     if isinstance(icon, str) and not icon.startswith("sf:") and not (directory / icon).is_file():
-        errors.append(f"图标文件 {icon} 不存在")
+        errors.append(f"icon file {icon} not found")
 
     features = m.get("features")
     if not isinstance(features, list) or not features:
-        errors.append("features 至少要有一个功能")
+        errors.append("features needs at least one feature")
         features = []
     codes = set()
     for i, f in enumerate(features):
         where = f"features[{i}]"
         if not isinstance(f.get("code"), str) or not f["code"]:
-            errors.append(f"{where} 缺少 code")
+            errors.append(f"{where} is missing code")
         elif f["code"] in codes:
-            errors.append(f"{where} code「{f['code']}」重复")
+            errors.append(f"{where} code \"{f['code']}\" is duplicated")
         else:
             codes.add(f["code"])
         if not isinstance(f.get("title"), str) or not f["title"]:
-            errors.append(f"{where} 缺少 title")
+            errors.append(f"{where} is missing title")
         for j, rule in enumerate(f.get("matches") or []):
             if rule.get("type") not in MATCH_TYPES:
-                errors.append(f"{where}.matches[{j}] type 应为 regex 或 text")
+                errors.append(f"{where}.matches[{j}] type must be regex or text")
             elif rule["type"] == "regex":
                 try:
                     re.compile(rule.get("pattern") or "")
                 except re.error as e:
-                    # Python 与 NSRegularExpression 语法略有差异，这里只做粗查
-                    errors.append(f"{where}.matches[{j}] 正则可能有误：{e}")
+                    # Python and NSRegularExpression syntax differ slightly; this is only a rough check
+                    errors.append(f"{where}.matches[{j}] regex may be invalid: {e}")
                 if not rule.get("pattern"):
-                    errors.append(f"{where}.matches[{j}] regex 缺少 pattern")
+                    errors.append(f"{where}.matches[{j}] regex is missing pattern")
 
-    # __MSG_key__ 必须能在默认语言里找到
+    # every __MSG_key__ must exist in the default locale
     default = m.get("defaultLocale") or "en"
     if locales and default not in locales:
-        errors.append(f"defaultLocale「{default}」没有对应的 locales/{default}.json")
+        errors.append(f"defaultLocale \"{default}\" has no locales/{default}.json")
     for text in collect_texts(m):
         match = MSG_RE.match(text)
         if match and match.group(1) not in locales.get(default, {}):
-            errors.append(f"文案 {text} 在 locales/{default}.json 中不存在")
+            errors.append(f"string {text} not found in locales/{default}.json")
 
     if errors:
         raise PackError(f"{directory}:\n  - " + "\n  - ".join(errors))
@@ -136,7 +136,7 @@ def collect_texts(m: dict):
 
 
 def localize(text, m: dict, locales: dict):
-    """把 "__MSG_key__" 展开成 {语言: 文案}；普通文本原样返回"""
+    """Expand "__MSG_key__" to {language: string}; plain text is returned as is"""
     if not isinstance(text, str):
         return text
     match = MSG_RE.match(text)
@@ -153,7 +153,7 @@ def files_to_pack(directory: Path):
         if any(part in EXCLUDE_DIRS for part in rel.parts) or path.name in EXCLUDE_NAMES:
             continue
         if path.is_symlink():
-            raise PackError(f"{path}: 插件里不能有软链接")
+            raise PackError(f"{path}: extensions can't contain symlinks")
         if path.is_file():
             yield path, rel.as_posix()
 
@@ -209,7 +209,7 @@ def pack(directory: Path, out: Path, homepage: str | None, official: bool) -> di
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("dirs", nargs="+", type=Path)
-    parser.add_argument("--check", action="store_true", help="只校验")
+    parser.add_argument("--check", action="store_true", help="validate only")
     parser.add_argument("--out", type=Path, default=Path("dist"))
     parser.add_argument("--homepage")
     parser.add_argument("--official", action="store_true")
