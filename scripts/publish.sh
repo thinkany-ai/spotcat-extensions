@@ -82,7 +82,8 @@ publish_one() { # <id>
     echo "    $version 已发布，跳过（发布新版本请先修改 manifest.json 的 version）"
     return 0
   fi
-  if [ -z "${DRY_RUN:-}" ] && curl -fsI "$CDN/$id/$version.zip" >/dev/null 2>&1; then
+  # 带查询参数绕过 CDN 缓存：否则这次检查得到的 404 会被缓存，上传后几分钟内仍然下载不到
+  if [ -z "${DRY_RUN:-}" ] && curl -fsI "$CDN/$id/$version.zip?check=$(date +%s)" >/dev/null 2>&1; then
     echo "    $CDN/$id/$version.zip 已存在，同一版本不能覆盖，请升级 version" >&2
     return 1
   fi
