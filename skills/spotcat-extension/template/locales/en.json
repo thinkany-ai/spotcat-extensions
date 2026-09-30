@@ -1,0 +1,13 @@
+{
+  "name": "Text Stats",
+  "description": "Count characters, words and lines",
+  "featureTitle": "Text Stats",
+  "kwCount": "count",
+
+  "inputPlaceholder": "Paste or type text",
+  "chars": "Characters",
+  "words": "Words",
+  "lines": "Lines",
+  "copy": "Copy",
+  "copied": "Copied {count} stats"
+}

@@ -1,0 +1,22 @@
+{
+  "id": "my-extension",
+  "name": "__MSG_name__",
+  "version": "0.1.0",
+  "description": "__MSG_description__",
+  "author": "Your Name",
+  "homepage": "https://github.com/you/spotcat-extension-my-extension",
+  "icon": "sf:textformat.characters",
+  "iconColor": "#10B981",
+  "main": "index.html",
+  "defaultLocale": "en",
+  "features": [
+    {
+      "code": "count",
+      "title": "__MSG_featureTitle__",
+      "keywords": ["__MSG_kwCount__", "wc", "word count"],
+      "matches": [
+        { "type": "text", "minLength": 20, "maxLength": 100000 }
+      ]
+    }
+  ]
+}

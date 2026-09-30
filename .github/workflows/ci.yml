@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate manifests
+        run: python3 scripts/pack.py --check extensions/*
+      - name: Validate registry.json
+        run: |
+          python3 - <<'PY'
+          import json, os, re
+          r = json.load(open("registry.json"))
+          ids = set(os.listdir("extensions"))
+          for e in r["community"]:
+              for k in ("id", "repo", "ref", "version"):
+                  assert e.get(k), f"community entry missing {k}: {e}"
+              assert re.match(r"^https://github\.com/[\w.-]+/[\w.-]+$", e["repo"]), f"repo must be a GitHub URL: {e['repo']}"
+              assert e["id"] not in ids, f"duplicate id {e['id']}"
+              ids.add(e["id"])
+          for i in r["recommended"]:
+              assert i in ids, f"recommended {i} not found"
+          print("registry ok")
+          PY
+      - name: Pack (dry run)
+        run: DRY_RUN=1 ./scripts/publish.sh --changed

@@ -1,0 +1,13 @@
+{
+  "name": "文本统计",
+  "description": "统计字符数、词数和行数",
+  "featureTitle": "文本统计",
+  "kwCount": "字数统计",
+
+  "inputPlaceholder": "粘贴或输入文本",
+  "chars": "字符",
+  "words": "词",
+  "lines": "行",
+  "copy": "复制",
+  "copied": "已复制 {count} 项统计"
+}

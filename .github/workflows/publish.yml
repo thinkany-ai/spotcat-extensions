@@ -1,0 +1,48 @@
+name: Publish
+
+# 合并到 main 后发布版本号有变化的扩展（官方扩展改了 version，或 registry.json 收录/升级了社区扩展）；
+# 也可以手动运行，指定要发布的扩展 id。
+#
+# 需要的 Secrets：CLOUDFLARE_ACCOUNT_ID、R2_ACCESS_KEY_ID、R2_SECRET_ACCESS_KEY（spotcat 桶的 R2 读写令牌）
+
+on:
+  push:
+    branches: [main]
+    paths: ["extensions/**", "registry.json", "scripts/**"]
+  workflow_dispatch:
+    inputs:
+      ids:
+        description: "要发布的扩展 id（空格分隔）；留空发布所有有变化的，填 --index-only 只重建 index.json"
+        required: false
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check secrets
+        id: secrets
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+        run: |
+          if [ -z "$R2_ACCESS_KEY_ID" ]; then
+            echo "::notice::R2 secrets are not configured; skipping. Publish locally with ./scripts/publish.sh."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          IDS: ${{ github.event.inputs.ids }}
+        run: |
+          if [ -n "$IDS" ]; then ./scripts/publish.sh $IDS; else ./scripts/publish.sh --changed; fi

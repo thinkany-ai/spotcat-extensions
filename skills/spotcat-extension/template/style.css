@@ -1,0 +1,41 @@
+:root {
+  --fg: rgba(0, 0, 0, 0.85);
+  --fg-2: rgba(0, 0, 0, 0.5);
+  --field: rgba(0, 0, 0, 0.05);
+  --border: rgba(0, 0, 0, 0.08);
+  --accent: #10B981;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fg: rgba(255, 255, 255, 0.88);
+    --fg-2: rgba(255, 255, 255, 0.5);
+    --field: rgba(255, 255, 255, 0.07);
+    --border: rgba(255, 255, 255, 0.1);
+    --accent: #34D399;
+  }
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; height: 100%;
+  /* 透明背景，让 Spotcat 面板的毛玻璃透出来 */
+  background: transparent;
+  color: var(--fg);
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+}
+body { display: flex; flex-direction: column; gap: 12px; padding: 4px 20px 20px; }
+
+textarea {
+  flex: 1; min-height: 0; resize: none;
+  padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--field); color: var(--fg); font: inherit; outline: none;
+}
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat { padding: 10px 14px; border-radius: 10px; background: var(--field); }
+.stat b { display: block; font-size: 22px; font-weight: 600; }
+.stat span { color: var(--fg-2); font-size: 12px; }
+.actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
+.status { color: var(--fg-2); font-size: 12px; }
+button {
+  border: 0; border-radius: 7px; padding: 5px 14px;
+  background: var(--accent); color: #fff; font: inherit;
+}

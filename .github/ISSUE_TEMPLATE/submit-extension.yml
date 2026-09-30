@@ -1,0 +1,64 @@
+name: 提交扩展 / Submit an extension
+description: 申请把你的开源扩展收录到 Spotcat 插件市场 / Get your open-source extension listed in the Spotcat store
+title: "[Submit] "
+labels: ["submission"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢贡献！提交前请阅读 [开发文档的「发布」一节](https://github.com/thinkany-ai/spotcat-extensions/blob/main/docs/development.md#发布)。
+        Thanks for contributing! Please read the "发布" (Publishing) section of the developer docs first.
+  - type: input
+    id: repo
+    attributes:
+      label: 仓库地址 / Repository
+      description: 公开的 GitHub 仓库，建议命名为 spotcat-extension-<名字>
+      placeholder: https://github.com/you/spotcat-extension-hello
+    validations:
+      required: true
+  - type: input
+    id: ref
+    attributes:
+      label: 版本 tag / Release tag
+      description: 要收录的 tag（或 commit），需与 manifest.json 的 version 一致
+      placeholder: v1.0.0
+    validations:
+      required: true
+  - type: input
+    id: id
+    attributes:
+      label: 扩展 id / Extension id
+      description: manifest.json 中的 id
+      placeholder: hello
+    validations:
+      required: true
+  - type: input
+    id: path
+    attributes:
+      label: 子目录 / Subdirectory
+      description: 可选，manifest.json 不在仓库根目录时填写
+  - type: textarea
+    id: description
+    attributes:
+      label: 介绍 / Description
+      description: 做什么、怎么触发（关键词 / 内容匹配），最好附截图
+    validations:
+      required: true
+  - type: textarea
+    id: permissions
+    attributes:
+      label: 权限说明 / Permissions
+      description: 用到 network 时列出会访问的域名和用途；用到 ai 时说明发送给模型的内容
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: 检查清单 / Checklist
+      options:
+        - label: "`python3 scripts/pack.py --check` 校验通过 / passes `scripts/pack.py --check`"
+          required: true
+        - label: 代码未混淆，不从网络加载并执行脚本 / No obfuscated code, no remotely loaded scripts
+          required: true
+        - label: 仓库有 README 和开源许可证 / The repository has a README and an open-source license
+          required: true
+        - label: 在 Spotcat 中实际测试过（浅色和深色外观）/ Tested in Spotcat in light and dark appearance
+          required: true
