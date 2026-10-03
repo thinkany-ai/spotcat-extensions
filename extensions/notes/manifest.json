@@ -1,0 +1,26 @@
+{
+  "id": "notes",
+  "name": "__MSG_name__",
+  "version": "0.1.0",
+  "description": "__MSG_description__",
+  "author": "Spotcat",
+  "icon": "sf:note.text",
+  "iconColor": "#F2B705",
+  "main": "index.html",
+  "defaultLocale": "zh-Hans",
+  "features": [
+    {
+      "code": "add",
+      "title": "__MSG_featureAdd__",
+      "keywords": ["__MSG_kwAdd__", "jbj", "note", "add note", "new note"],
+      "matches": [
+        { "type": "text", "minLength": 1, "maxLength": 100000 }
+      ]
+    },
+    {
+      "code": "list",
+      "title": "__MSG_featureList__",
+      "keywords": ["__MSG_kwList__", "bj", "notes", "memo"]
+    }
+  ]
+}

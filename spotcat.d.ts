@@ -4,9 +4,9 @@
 interface SpotcatEnterAction {
   /** The feature's code from manifest.json */
   code: string;
-  /** keyword: entered by keyword; match: entered by content match */
-  type: 'keyword' | 'match';
-  /** The typed keyword for keyword, or the matched content for match */
+  /** keyword: entered by keyword; match: entered by content match; item: entered from an item passed to search.setItems */
+  type: 'keyword' | 'match' | 'item';
+  /** The typed keyword for keyword, the matched content for match, or the item id for item */
   payload: string;
 }
 
@@ -41,6 +41,41 @@ interface SpotcatFetchResponse {
   headers: Record<string, string>;
   /** Response text (UTF-8) */
   body: string;
+}
+
+interface SpotcatSearchItem {
+  /** Passed back as payload when the item is chosen */
+  id: string;
+  /** Shown in the result (≤ 200 chars) */
+  title: string;
+  /** Shown next to the title (≤ 300 chars) */
+  subtitle?: string;
+  /** Matched but not shown (≤ 5000 chars) */
+  text?: string;
+  /** Feature to enter; defaults to the first feature */
+  code?: string;
+}
+
+interface SpotcatClipboardItem {
+  id: string;
+  type: 'text' | 'image' | 'files';
+  /** Milliseconds since 1970 */
+  time: number;
+  pinned: boolean;
+  /** App that was in front when it was copied */
+  app?: string;
+  /** First 300 characters (text) */
+  preview?: string;
+  /** Full length (text) */
+  length?: number;
+  /** Full text, only from get() */
+  text?: string;
+  /** File paths (files) */
+  files?: string[];
+  /** [width, height] in pixels (image) */
+  size?: [number, number];
+  /** Preview image as a data URL, only from get() (image) */
+  image?: string;
 }
 
 interface Spotcat {
@@ -89,6 +124,35 @@ interface Spotcat {
   /** Spotcat's built-in AI chat. Esc or the back button in the chat returns to the extension with its state intact */
   chat: {
     open(options?: SpotcatChatOpenOptions): Promise<true>;
+  };
+
+  /** Put text on the clipboard, hide Spotcat and paste into the front app. Resolves false without Accessibility access (the text is still copied). Spotcat 0.5.0+ */
+  paste(text: string): Promise<boolean>;
+
+  /** Searchable content shown in the main search box; entering from it passes type 'item'. Spotcat 0.5.0+ (check spotcat.search exists) */
+  search?: {
+    /** Replaces everything set before (at most 2000 items); [] clears */
+    setItems(items: SpotcatSearchItem[]): Promise<true>;
+  };
+
+  /** Clipboard history recorded by Spotcat. Requires "permissions": ["clipboard"]. Spotcat 0.5.0+ */
+  clipboard: {
+    /** Pinned items first, then newest first */
+    list(options?: { query?: string; limit?: number }): Promise<SpotcatClipboardItem[]>;
+    get(id: string): Promise<SpotcatClipboardItem>;
+    /** Small preview image as a data URL (image items) */
+    thumbnail(id: string): Promise<string | null>;
+    copy(id: string): Promise<boolean>;
+    /** Copy, hide Spotcat and paste into the front app; false without Accessibility access */
+    paste(id: string): Promise<boolean>;
+    pin(id: string, pinned?: boolean): Promise<true>;
+    remove(id: string): Promise<true>;
+    /** Removes everything except pinned items */
+    clear(): Promise<true>;
+    /** Whether Spotcat is recording (the built-in Clipboard extension is enabled) */
+    status(): Promise<{ recording: boolean }>;
+    /** Called when something new is copied or an item changes */
+    onChange(callback: () => void): void;
   };
 
   /** Private persistent storage for the extension; values must be JSON-serializable */

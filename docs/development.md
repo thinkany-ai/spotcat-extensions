@@ -95,7 +95,7 @@ Before submitting, make sure that:
 | `icon` | `sf:<SF Symbol name>` (drawn as a colored rounded tile) or an image path relative to the extension folder (png / icns / pdf) |
 | `iconColor` | Background color of an `sf:` icon; defaults to system blue |
 | `main` | Entry page; defaults to `index.html` |
-| `permissions` | Sensitive capabilities: `"network"` (`spotcat.fetch`), `"ai"` (`spotcat.ai`, uses the user's AI quota) |
+| `permissions` | Sensitive capabilities: `"network"` (`spotcat.fetch`), `"ai"` (`spotcat.ai`, uses the user's AI quota), `"clipboard"` (`spotcat.clipboard`, the user's clipboard history) |
 | `defaultLocale` | Default language such as `"en"`; strings missing in the current language come from here |
 | `homepage` | Optional: the extension's homepage (source repository), shown in the store |
 | `minAppVersion` | Optional: the minimum Spotcat version, such as `"0.3.0"`; set it when you use new APIs |
@@ -194,6 +194,7 @@ Injected before the page loads; nothing to import. Every method returns a Promis
 spotcat.onEnter(({ code, type, payload }) => {
   // type: 'keyword' (entered by keyword; payload is the typed keyword)
   //       'match'   (entered by content match; payload is the matched content)
+  //       'item'    (entered from an item you passed to search.setItems; payload is its id)
 });
 ```
 
@@ -212,8 +213,27 @@ spotcat.onEnter(({ code, type, payload }) => {
 | `i18n.locale` / `i18n.t(key, vars)` / `i18n.apply(root)` | Localization, see above | |
 | `ai.info({ model })` / `ai.chat({ messages, model, onDelta, signal })` | Use the AI service configured in Spotcat; `model` is optional and defaults to the default model | `ai` |
 | `chat.open({ title, context, prompt, send })` | Open the built-in AI chat with context | |
+| `search.setItems(items)` | Make your content searchable from the main search box, see below (0.5.0+) | |
+| `paste(text)` | Put text on the clipboard, hide Spotcat and paste into the front app; resolves `false` without Accessibility access (the text is still copied) (0.5.0+) | |
+| `clipboard.list({ query, limit })` / `get(id)` / `copy(id)` / `paste(id)` / `pin(id, pinned)` / `remove(id)` / `clear()` / `onChange(cb)` | The clipboard history Spotcat records (0.5.0+) | `clipboard` |
 
 `storage` data is kept in `~/Library/Application Support/Spotcat/ExtensionData/<extension id>.json`.
+
+### Searchable content: `search.setItems`
+
+Your page only runs while it is open, so Spotcat can't ask it for results while the user types. Instead, hand your content to Spotcat whenever it changes; Spotcat stores it and matches it in the main search box (titles first, then `subtitle` and `text`), showing up to 5 items in a section named after your extension. Choosing one enters your feature with `type: 'item'` and the item `id` as `payload`.
+
+```js
+spotcat.search?.setItems(notes.map((n) => ({
+  id: n.id,            // required, passed back as payload
+  title: n.title,      // required, shown in the result (≤ 200 chars)
+  subtitle: n.preview, // optional, shown next to the title (≤ 300)
+  text: n.body,        // optional, matched but not shown (≤ 5000)
+  code: 'list',        // optional, which feature to enter; defaults to the first one
+})));
+```
+
+Each call replaces everything you set before (at most 2000 items); pass `[]` to clear. Use `spotcat.search?.` so older Spotcat versions simply skip it.
 
 ## Page conventions
 

@@ -95,7 +95,7 @@ ln -s "$PWD/my-extension" ~/Library/Application\ Support/Spotcat/Extensions/my-e
 | `icon` | `sf:<SF Symbol 名>`（渲染为彩色圆角方块），或相对扩展目录的图片路径（png / icns / pdf） |
 | `iconColor` | `sf:` 图标的背景色，默认系统蓝 |
 | `main` | 入口页面，默认 `index.html` |
-| `permissions` | 需要的敏感能力：`"network"`（`spotcat.fetch`）、`"ai"`（`spotcat.ai`，消耗用户的 AI 额度） |
+| `permissions` | 需要的敏感能力：`"network"`（`spotcat.fetch`）、`"ai"`（`spotcat.ai`，消耗用户的 AI 额度）、`"clipboard"`（`spotcat.clipboard`，用户的剪贴板历史） |
 | `defaultLocale` | 默认语言，如 `"zh-Hans"`；当前语言缺失的文案从这里取 |
 | `homepage` | 可选，扩展主页（源码仓库），显示在插件市场 |
 | `minAppVersion` | 可选，需要的最低 Spotcat 版本，如 `"0.3.0"`；用到新 API 时填写 |
@@ -195,6 +195,7 @@ spotcat.chat.open({
 spotcat.onEnter(({ code, type, payload }) => {
   // type: 'keyword'（关键词进入，payload 是输入的关键词）
   //       'match'  （内容匹配进入，payload 是匹配到的内容）
+  //       'item'   （从 search.setItems 提供的条目进入，payload 是条目 id）
 });
 ```
 
@@ -213,8 +214,27 @@ spotcat.onEnter(({ code, type, payload }) => {
 | `i18n.locale` / `i18n.t(key, vars)` / `i18n.apply(root)` | 多语言，见上文 | |
 | `ai.info({ model })` / `ai.chat({ messages, model, onDelta, signal })` | 使用 Spotcat 配置的 AI 服务；`model` 可选，默认用设置里的默认模型 | `ai` |
 | `chat.open({ title, context, prompt, send })` | 带上下文进入内置 AI 对话 | |
+| `search.setItems(items)` | 让扩展的内容能在主搜索框里搜到，见下文（0.5.0+） | |
+| `paste(text)` | 写入剪贴板、隐藏 Spotcat 并粘贴到前台应用；没有辅助功能权限时返回 `false`（内容仍已复制）（0.5.0+） | |
+| `clipboard.list({ query, limit })` / `get(id)` / `copy(id)` / `paste(id)` / `pin(id, pinned)` / `remove(id)` / `clear()` / `onChange(cb)` | Spotcat 记录的剪贴板历史（0.5.0+） | `clipboard` |
 
 `storage` 数据存放在 `~/Library/Application Support/Spotcat/ExtensionData/<扩展 id>.json`。
+
+### 可搜索的内容：`search.setItems`
+
+扩展页面只在打开时运行，用户在搜索框输入时没法实时问扩展要结果。所以反过来：内容变化时交给 Spotcat，由 Spotcat 保存并在主搜索框里匹配（先标题，再 `subtitle` 和 `text`），以扩展名为分区最多显示 5 条。选中后以 `type: 'item'`、`payload` 为条目 `id` 进入对应功能。
+
+```js
+spotcat.search?.setItems(notes.map((n) => ({
+  id: n.id,            // 必填，进入时作为 payload 传回
+  title: n.title,      // 必填，显示在结果里（≤ 200 字）
+  subtitle: n.preview, // 可选，显示在标题旁（≤ 300 字）
+  text: n.body,        // 可选，参与匹配但不显示（≤ 5000 字）
+  code: 'list',        // 可选，进入哪个功能，默认第一个
+})));
+```
+
+每次调用整体替换之前的内容（最多 2000 条），传 `[]` 清除。写成 `spotcat.search?.`，旧版 Spotcat 会直接跳过。
 
 ## 页面约定
 
